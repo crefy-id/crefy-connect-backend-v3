@@ -10,7 +10,7 @@ import path from 'path';
 import { mongodb_config } from './config'; // Import your MongoDB config
 
 const app: Express = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8003;
 
 // MongoDB connection function
 async function connectDB() {

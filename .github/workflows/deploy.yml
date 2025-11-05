@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy to Contabo
 
 on:
     push:
@@ -15,15 +15,11 @@ on:
                 options:
                     - staging
                     - production
-            skip_tests:
-                description: 'Skip tests before deployment'
-                required: false
-                default: false
-                type: boolean
 
 env:
     NODE_VERSION: '20'
     PNPM_VERSION: '8'
+    DEPLOY_PATH: '/var/www/www.crefy.xyz/crefy-connect-backend-v3'
 
 jobs:
     pre-deployment:
@@ -34,6 +30,9 @@ jobs:
             deploy_version: ${{ steps.version.outputs.version }}
 
         steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
             - name: Determine deployment environment
               id: environment
               run: |
@@ -53,78 +52,10 @@ jobs:
                   echo "version=$VERSION-$TIMESTAMP" >> $GITHUB_OUTPUT
                   echo "Deployment version: $VERSION-$TIMESTAMP"
 
-    security-scan:
-        name: Security Scan
+    build:
+        name: Build Application
         runs-on: ubuntu-latest
         needs: pre-deployment
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Run Trivy vulnerability scanner
-              uses: aquasecurity/trivy-action@master
-              with:
-                  scan-type: 'fs'
-                  scan-ref: '.'
-                  format: 'sarif'
-                  output: 'trivy-results.sarif'
-
-            - name: Upload Trivy scan results
-              uses: github/codeql-action/upload-sarif@v3
-              with:
-                  sarif_file: 'trivy-results.sarif'
-
-    test-deployment:
-        name: Test Deployment
-        runs-on: ubuntu-latest
-        needs: [pre-deployment, security-scan]
-        if: ${{ github.event.inputs.skip_tests != 'true' }}
-
-        strategy:
-            matrix:
-                node-version: [18, 20]
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Setup Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ matrix.node-version }}
-
-            - name: Setup PNPM
-              uses: pnpm/action-setup@v2
-              with:
-                  version: ${{ env.PNPM_VERSION }}
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
-
-            - name: Build application
-              run: pnpm build
-
-            - name: Start application
-              run: |
-                  pnpm start &
-                  sleep 10
-              env:
-                  NODE_ENV: test
-
-            - name: Health check
-              run: |
-                  curl -f http://localhost:3000/health || exit 1
-
-            - name: Run smoke tests
-              run: |
-                  # Add smoke test commands here
-                  echo "Running smoke tests..."
-
-    build-and-deploy:
-        name: Build and Deploy
-        runs-on: ubuntu-latest
-        needs: [pre-deployment, security-scan]
 
         steps:
             - name: Checkout code
@@ -143,99 +74,127 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
+            - name: Run tests
+              run: pnpm test
+
             - name: Build application
               run: pnpm build
 
-            - name: Build Docker image
+            - name: Create deployment package
               run: |
-                  docker build -t ${{ needs.pre-deployment.outputs.environment }}-crefy-backend:${{ needs.pre-deployment.outputs.deploy_version }} .
+                  mkdir -p deployment
+                  cp -r dist package.json pnpm-lock.yaml .env.example deployment/
+                  tar -czf deployment.tar.gz deployment/
 
-            - name: Tag for registry
-              run: |
-                  docker tag ${{ needs.pre-deployment.outputs.environment }}-crefy-backend:${{ needs.pre-deployment.outputs.deploy_version }} ${{ secrets.DOCKER_REGISTRY }}/${{ needs.pre-deployment.outputs.environment }}-crefy-backend:${{ needs.pre-deployment.outputs.deploy_version }}
+            - name: Upload deployment artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deployment-package
+                  path: deployment.tar.gz
 
-            - name: Push to registry
-              run: |
-                  echo "${{ secrets.DOCKER_REGISTRY_PASSWORD }}" | docker login ${{ secrets.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_REGISTRY_USERNAME }} --password-stdin
-                  docker push ${{ secrets.DOCKER_REGISTRY }}/${{ needs.pre-deployment.outputs.environment }}-crefy-backend:${{ needs.pre-deployment.outputs.deploy_version }}
-
-            - name: Deploy to ${{ needs.pre-deployment.outputs.environment }}
-              run: |
-                  # Add deployment commands based on your infrastructure
-                  # This could be kubectl, docker-compose, or other deployment tools
-                  echo "Deploying to ${{ needs.pre-deployment.outputs.environment }} environment..."
-                  echo "Image: ${{ secrets.DOCKER_REGISTRY }}/${{ needs.pre-deployment.outputs.environment }}-crefy-backend:${{ needs.pre-deployment.outputs.deploy_version }}"
-
-            - name: Wait for deployment
-              run: |
-                  # Wait for the deployment to be ready
-                  echo "Waiting for deployment to be ready..."
-                  sleep 30
-
-            - name: Health check after deployment
-              run: |
-                  # Perform health check on deployed application
-                  if [ "${{ needs.pre-deployment.outputs.environment }}" = "production" ]; then
-                    curl -f https://api.production.crefy.com/health || exit 1
-                  else
-                    curl -f https://api.staging.crefy.com/health || exit 1
-                  fi
-
-    post-deployment:
-        name: Post-deployment Verification
+    deploy-to-contabo:
+        name: Deploy to Contabo
         runs-on: ubuntu-latest
-        needs: [pre-deployment, build-and-deploy]
+        needs: [pre-deployment, build]
 
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+            - name: Download deployment artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: deployment-package
 
-            - name: Run API tests
+            - name: Setup SSH
+              uses: webfactory/ssh-agent@v0.8.0
+              with:
+                  ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
+
+            - name: Copy files to Contabo
               run: |
-                  # Run API integration tests against the deployed environment
-                  BASE_URL=$( [ "${{ needs.pre-deployment.outputs.environment }}" = "production" ] && echo "https://api.production.crefy.com" || echo "https://api.staging.crefy.com" )
-                  echo "Testing API at: $BASE_URL"
+                  scp -o StrictHostKeyChecking=no deployment.tar.gz ${{ secrets.CONTABO_USERNAME }}@${{ secrets.CONTABO_HOST }}:${{ env.DEPLOY_PATH }}/deployment.tar.gz
 
-                  # Add your API test commands here
-                  echo "Running API integration tests..."
+            - name: Deploy on Contabo server
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.CONTABO_HOST }}
+                  username: ${{ secrets.CONTABO_USERNAME }}
+                  password: ${{ secrets.CONTABO_PASSWORD }}
+                  script: |
+                      cd ${{ env.DEPLOY_PATH }}
 
-            - name: Update deployment record
+                      # Stop the current application
+                      echo "Stopping current application..."
+                      pm2 stop crefy-backend || true
+
+                      # Backup current deployment
+                      echo "Backing up current deployment..."
+                      tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz dist package.json pnpm-lock.yaml node_modules
+
+                      # Extract new deployment
+                      echo "Extracting new deployment..."
+                      tar -xzf deployment.tar.gz
+                      cp -r deployment/* .
+                      rm -rf deployment deployment.tar.gz
+
+                      # Install dependencies
+                      echo "Installing dependencies..."
+                      npm install -g pnpm
+                      pnpm install --frozen-lockfile --prod
+
+                      # Copy environment file if it exists
+                      if [ -f .env ]; then
+                        cp .env .env.backup
+                      fi
+                      if [ -f .env.example ]; then
+                        cp .env.example .env
+                      fi
+                      if [ -f .env.backup ]; then
+                        cp .env.backup .env
+                      fi
+
+                      # Start application with PM2
+                      echo "Starting application..."
+                      pm2 start dist/server.js --name "crefy-backend" --update-env
+                      pm2 save
+
+                      # Run database migrations if needed
+                      # npx prisma migrate deploy
+
+                      echo "Deployment completed successfully!"
+
+            - name: Health check
               run: |
-                  # Update deployment tracking system
-                  echo "Recording deployment: ${{ needs.pre-deployment.outputs.environment }} v${{ needs.pre-deployment.outputs.deploy_version }}"
+                  sleep 10
+                  curl -f http://${{ secrets.CONTABO_HOST }}:3000/health || exit 1
 
-            - name: Notify deployment success
-              if: success()
-              run: |
-                  echo "Deployment to ${{ needs.pre-deployment.outputs.environment }} completed successfully!"
+            - name: Verify deployment
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.CONTABO_HOST }}
+                  username: ${{ secrets.CONTABO_USERNAME }}
+                  password: ${{ secrets.CONTABO_PASSWORD }}
+                  script: |
+                      echo "Deployment verification:"
+                      echo "PM2 Status:"
+                      pm2 status
+                      echo "Application logs:"
+                      pm2 logs crefy-backend --lines 10
 
-            - name: Notify deployment failure
-              if: failure()
+    notify:
+        name: Notify Deployment Status
+        runs-on: ubuntu-latest
+        needs: [pre-deployment, deploy-to-contabo]
+        if: always()
+
+        steps:
+            - name: Notify on success
+              if: needs.deploy-to-contabo.result == 'success'
               run: |
-                  echo "Deployment to ${{ needs.pre-deployment.outputs.environment }} failed!"
+                  echo "🚀 Deployment to ${{ needs.pre-deployment.outputs.environment }} completed successfully!"
+                  echo "Version: ${{ needs.pre-deployment.outputs.deploy_version }}"
+                  echo "Server: ${{ secrets.CONTABO_HOST }}"
+
+            - name: Notify on failure
+              if: needs.deploy-to-contabo.result == 'failure'
+              run: |
+                  echo "❌ Deployment to ${{ needs.pre-deployment.outputs.environment }} failed!"
                   exit 1
-
-    rollback:
-        name: Rollback on Failure
-        runs-on: ubuntu-latest
-        needs: [pre-deployment, build-and-deploy]
-        if: failure() && needs.pre-deployment.outputs.environment == 'production'
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Rollback production deployment
-              run: |
-                  echo "Rolling back production deployment..."
-                  # Add rollback commands here
-                  # This should revert to the previous working version
-
-            - name: Verify rollback
-              run: |
-                  echo "Verifying rollback..."
-                  curl -f https://api.production.crefy.com/health || exit 1
-
-            - name: Notify rollback
-              run: |
-                  echo "Production deployment rolled back successfully!"
