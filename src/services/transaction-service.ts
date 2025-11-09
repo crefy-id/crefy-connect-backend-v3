@@ -130,9 +130,8 @@ export class TransactionService {
                         account: walletClient.account,
                     });
 
-                transactionHash = await walletClient.writeContract(
-                    contractWrite,
-                );
+                transactionHash =
+                    await walletClient.writeContract(contractWrite);
             } else {
                 // Native token transfer
                 const value = parseUnits(
@@ -167,9 +166,8 @@ export class TransactionService {
                     transactionRequest.gas = BigInt(request.gasLimit);
                 }
 
-                transactionHash = await walletClient.sendTransaction(
-                    transactionRequest,
-                );
+                transactionHash =
+                    await walletClient.sendTransaction(transactionRequest);
             }
 
             return {
@@ -331,8 +329,8 @@ export class TransactionService {
                     receipt.status === 'success'
                         ? 'success'
                         : receipt.status === 'reverted'
-                        ? 'failed'
-                        : 'pending',
+                          ? 'failed'
+                          : 'pending',
                 blockNumber: receipt.blockNumber
                     ? Number(receipt.blockNumber)
                     : undefined,

@@ -16,6 +16,7 @@ import {
     bscTestnet,
 } from 'viem/chains';
 import { ChainConfig } from '../types/signing-types';
+import 'dotenv';
 
 // Custom Lisk configuration (you'll need to add Lisk to viem or create custom config)
 export const lisk = {

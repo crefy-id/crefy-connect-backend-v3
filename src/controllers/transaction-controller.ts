@@ -165,9 +165,8 @@ export class TransactionController extends Controller {
                 );
             }
 
-            const result = await this.transactionService.getTransactionHistory(
-                body,
-            );
+            const result =
+                await this.transactionService.getTransactionHistory(body);
 
             if (result.success) {
                 return result;
@@ -219,9 +218,8 @@ export class TransactionController extends Controller {
                 );
             }
 
-            const result = await this.transactionService.getGasPrices(
-                chainIdNumber,
-            );
+            const result =
+                await this.transactionService.getGasPrices(chainIdNumber);
 
             if (result.success) {
                 return result;
