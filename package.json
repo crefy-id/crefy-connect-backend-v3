@@ -4,7 +4,6 @@
     "description": "Wallet authentication API with Express and TypeScript",
     "main": "dist/server.js",
     "scripts": {
-        "prepare": "command -v husky > /dev/null && husky install || true",
         "pre-commit": "lint-staged",
         "lint": "eslint src/**/*.ts --fix",
         "lint:check": "eslint src/**/*.ts",
