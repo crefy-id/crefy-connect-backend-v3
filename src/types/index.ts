@@ -1,4 +1,4 @@
-import { Document, Types, FlattenMaps } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export interface IWallet extends Document {
     _id: Types.ObjectId;
@@ -69,13 +69,6 @@ export interface IWalletResponse {
         accessToken?: string | undefined;
         refreshToken?: string | undefined;
     };
-}
-
-export interface JwtPayload {
-    walletId: string;
-    appId: string;
-    iat?: number;
-    exp?: number;
 }
 
 export interface JwtPayload {

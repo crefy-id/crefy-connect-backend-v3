@@ -26,7 +26,7 @@ export function generateOTP(): number {
 /**
  * Expire the OTP after 4hours
  */
-export function expireOTP(otp: number): Date {
+export function expireOTP(_otp: number): Date {
     const now = new Date();
     now.setHours(now.getHours() + 4);
     return now;
