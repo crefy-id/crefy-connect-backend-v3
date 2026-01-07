@@ -328,6 +328,15 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"BlockchainNetwork": {
+				"description": "Supported blockchain networks",
+				"enum": [
+					"evm",
+					"stellar",
+					"solana"
+				],
+				"type": "string"
+			},
 			"SmsLoginResponse": {
 				"properties": {
 					"success": {
@@ -341,6 +350,9 @@
 					},
 					"walletExists": {
 						"type": "boolean"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -354,6 +366,9 @@
 				"properties": {
 					"phoneNumber": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -372,6 +387,9 @@
 					},
 					"data": {
 						"properties": {
+							"network": {
+								"$ref": "#/components/schemas/BlockchainNetwork"
+							},
 							"userData": {
 								"type": "string"
 							},
@@ -383,6 +401,7 @@
 							}
 						},
 						"required": [
+							"network",
 							"userData",
 							"socialType",
 							"walletAddress"
@@ -410,6 +429,9 @@
 					},
 					"otp": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -439,6 +461,9 @@
 				"properties": {
 					"phoneNumber": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -859,6 +884,9 @@
 					},
 					"walletExists": {
 						"type": "boolean"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -872,6 +900,9 @@
 				"properties": {
 					"email": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -890,6 +921,9 @@
 					},
 					"data": {
 						"properties": {
+							"network": {
+								"$ref": "#/components/schemas/BlockchainNetwork"
+							},
 							"userData": {
 								"type": "string"
 							},
@@ -901,6 +935,7 @@
 							}
 						},
 						"required": [
+							"network",
 							"userData",
 							"socialType",
 							"walletAddress"
@@ -928,6 +963,9 @@
 					},
 					"otp": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -957,6 +995,9 @@
 				"properties": {
 					"email": {
 						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
 					}
 				},
 				"required": [
@@ -1630,7 +1671,8 @@
 											"success": true,
 											"message": "OTP sent to phone number for verification",
 											"isActive": false,
-											"walletExists": false
+											"walletExists": false,
+											"network": "stellar"
 										}
 									}
 								}
@@ -1677,9 +1719,10 @@
 											"success": true,
 											"message": "Wallet verified successfully",
 											"data": {
-												"walletAddress": "0x742E6B6D8B6C4e8D8e8D8e8D8e8D8e8D8e8D8e8D",
+												"walletAddress": "GABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEF",
 												"socialType": "sms",
-												"userData": "{\"phoneNumber\":\"+1234567890\"}"
+												"userData": "{\"phoneNumber\":\"+1234567890\",\"network\":\"stellar\",\"secret\":\"S...\"}",
+												"network": "stellar"
 											},
 											"isActive": true,
 											"token": "jwt-token-here"
@@ -2543,7 +2586,8 @@
 											"success": true,
 											"message": "OTP sent to email for verification",
 											"isActive": false,
-											"walletExists": false
+											"walletExists": false,
+											"network": "stellar"
 										}
 									}
 								}
@@ -2590,9 +2634,10 @@
 											"success": true,
 											"message": "Wallet verified successfully",
 											"data": {
-												"walletAddress": "0x742E6B6D8B6C4e8D8e8D8e8D8e8D8e8D8e8D8e8D",
+												"walletAddress": "GABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEF",
 												"socialType": "email",
-												"userData": "{\"email\":\"user@example.com\"}"
+												"userData": "{\"email\":\"user@example.com\",\"network\":\"stellar\",\"secret\":\"S...\"}",
+												"network": "stellar"
 											},
 											"isActive": true,
 											"token": "jwt-token-here"

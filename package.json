@@ -70,6 +70,7 @@
         "typescript-eslint": "^8.46.2"
     },
     "dependencies": {
+        "@stellar/stellar-sdk": "^14.4.3",
         "@tsoa/runtime": "^6.6.0",
         "axios": "^1.13.1",
         "class-transformer": "^0.5.1",
