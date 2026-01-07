@@ -21,22 +21,25 @@ import {
     expireOTP,
     validatePhoneNumber,
 } from '../utils/auth';
-import walletService from '../services/wallet-service';
+import walletService, { BlockchainNetwork } from '../services/wallet-service';
 import { createSmsService, SmsServiceConfig } from '../services/sms-service';
 import { smtp_config } from '../config';
 
 // Request interfaces
 interface SmsLoginRequest {
     phoneNumber: string;
+    network?: BlockchainNetwork;
 }
 
 interface VerifySmsOTPRequest {
     phoneNumber: string;
     otp: string;
+    network?: BlockchainNetwork;
 }
 
 interface ResendSmsOTPRequest {
     phoneNumber: string;
+    network?: BlockchainNetwork;
 }
 
 // Response interfaces
@@ -45,6 +48,7 @@ interface SmsLoginResponse {
     message: string;
     isActive?: boolean;
     walletExists?: boolean;
+    network?: BlockchainNetwork;
 }
 
 interface VerifySmsOTPResponse {
@@ -54,6 +58,7 @@ interface VerifySmsOTPResponse {
         walletAddress: string;
         socialType: string;
         userData: string;
+        network: BlockchainNetwork;
     };
     isActive?: boolean;
     token?: string;
@@ -88,7 +93,7 @@ export class SmsAuthController extends Controller {
     /**
      * Login or register with phone number
      * Sends OTP via SMS for verification
-     * @example requestBody {"phoneNumber": "+1234567890"}
+     * @example requestBody {"phoneNumber": "+1234567890", "network": "stellar"}
      */
     @Post('login')
     @SuccessResponse('200', 'OTP sent successfully')
@@ -97,6 +102,7 @@ export class SmsAuthController extends Controller {
         message: 'OTP sent to phone number for verification',
         isActive: false,
         walletExists: false,
+        network: BlockchainNetwork.STELLAR,
     })
     @Security('app')
     public async smsLogin(
@@ -104,15 +110,16 @@ export class SmsAuthController extends Controller {
         @Request() request: ExpressRequest,
     ): Promise<SmsLoginResponse> {
         const { app } = (request as any).user;
-        const { phoneNumber } = body;
+        const { phoneNumber, network = BlockchainNetwork.EVM } = body;
         const token = request.header('Authorization')?.replace('Bearer ', '');
 
         this.validatePhoneInput(phoneNumber);
 
         const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-        const existingWallet = await this.findWalletByPhone(
+        const existingWallet = await this.findWalletByPhoneAndNetwork(
             normalizedPhone,
             app.appId,
+            network,
         );
 
         if (
@@ -123,6 +130,7 @@ export class SmsAuthController extends Controller {
                 success: true,
                 message: 'User already logged in',
                 isActive: true,
+                network: network,
             };
         }
 
@@ -141,21 +149,29 @@ export class SmsAuthController extends Controller {
                 message: 'OTP sent to phone number for verification',
                 isActive: existingWallet.isActive,
                 walletExists: true,
+                network: network,
             };
         }
 
-        await this.handleNewWallet(normalizedPhone, app.appId, otp, otpExpiry);
+        await this.handleNewWallet(
+            normalizedPhone,
+            app.appId,
+            otp,
+            otpExpiry,
+            network,
+        );
         return {
             success: true,
             message: 'OTP sent to phone number for verification',
             isActive: false,
             walletExists: false,
+            network: network,
         };
     }
 
     /**
      * Verify SMS OTP and activate wallet
-     * @example requestBody {"phoneNumber": "+1234567890", "otp": "123456"}
+     * @example requestBody {"phoneNumber": "+1234567890", "otp": "123456", "network": "stellar"}
      */
     @Post('verify')
     @SuccessResponse('200', 'Wallet verified successfully')
@@ -163,9 +179,11 @@ export class SmsAuthController extends Controller {
         success: true,
         message: 'Wallet verified successfully',
         data: {
-            walletAddress: '0x742E6B6D8B6C4e8D8e8D8e8D8e8D8e8D8e8D8e8D',
+            walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEF',
             socialType: 'sms',
-            userData: '{"phoneNumber":"+1234567890"}',
+            userData:
+                '{"phoneNumber":"+1234567890","network":"stellar","secret":"S..."}',
+            network: BlockchainNetwork.STELLAR,
         },
         isActive: true,
         token: 'jwt-token-here',
@@ -176,12 +194,16 @@ export class SmsAuthController extends Controller {
         @Request() request: ExpressRequest,
     ): Promise<VerifySmsOTPResponse> {
         const { app } = (request as any).user;
-        const { phoneNumber, otp } = body;
+        const { phoneNumber, otp, network = BlockchainNetwork.EVM } = body;
 
         this.validatePhoneInput(phoneNumber);
 
         const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-        const wallet = await this.findWalletByPhone(normalizedPhone, app.appId);
+        const wallet = await this.findWalletByPhoneAndNetwork(
+            normalizedPhone,
+            app.appId,
+            network,
+        );
 
         if (!wallet) {
             throw new ApiError(404, 'WALLET_NOT_FOUND', 'Wallet not found');
@@ -205,7 +227,10 @@ export class SmsAuthController extends Controller {
         this.validateOTP(wallet, otp);
         await this.activateWallet(wallet);
 
-        const newToken = generateJWT({ address: wallet.address });
+        const newToken = generateJWT({
+            address: wallet.address,
+            network: wallet.network,
+        });
 
         // Send welcome SMS
         await this.sendWelcomeSMS(normalizedPhone);
@@ -221,7 +246,7 @@ export class SmsAuthController extends Controller {
 
     /**
      * Resend OTP via SMS
-     * @example requestBody {"phoneNumber": "+1234567890"}
+     * @example requestBody {"phoneNumber": "+1234567890", "network": "stellar"}
      */
     @Post('resend-otp')
     @SuccessResponse('200', 'OTP resent successfully')
@@ -235,12 +260,16 @@ export class SmsAuthController extends Controller {
         @Request() request: ExpressRequest,
     ): Promise<ResendSmsOTPResponse> {
         const { app } = (request as any).user;
-        const { phoneNumber } = body;
+        const { phoneNumber, network = BlockchainNetwork.EVM } = body;
 
         this.validatePhoneInput(phoneNumber);
 
         const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-        const wallet = await this.findWalletByPhone(normalizedPhone, app.appId);
+        const wallet = await this.findWalletByPhoneAndNetwork(
+            normalizedPhone,
+            app.appId,
+            network,
+        );
 
         if (!wallet) {
             throw new ApiError(404, 'WALLET_NOT_FOUND', 'Wallet not found');
@@ -282,11 +311,16 @@ export class SmsAuthController extends Controller {
         return cleaned;
     }
 
-    private async findWalletByPhone(phoneNumber: string, appId: string) {
+    private async findWalletByPhoneAndNetwork(
+        phoneNumber: string,
+        appId: string,
+        network: BlockchainNetwork = BlockchainNetwork.EVM,
+    ) {
         return await Wallet.findOne({
             phoneNumber,
             socialType: 'sms',
             appId,
+            network,
         });
     }
 
@@ -297,7 +331,10 @@ export class SmsAuthController extends Controller {
         try {
             const decoded = verifyJWT(token);
             return (
-                wallet && wallet.address === decoded.address && wallet.isActive
+                wallet &&
+                wallet.address === decoded.address &&
+                wallet.network === decoded.network &&
+                wallet.isActive
             );
         } catch (error) {
             return false;
@@ -319,9 +356,21 @@ export class SmsAuthController extends Controller {
         appId: string,
         otp: number,
         otpExpiry: Date,
+        network: BlockchainNetwork = BlockchainNetwork.EVM,
     ): Promise<void> {
-        const walletInfo = await walletService.generateWallet();
+        const walletInfo = await walletService.generateWallet(network);
         const encryptionSalt = crypto.randomBytes(16).toString('hex');
+
+        // Prepare userData based on network
+        const userData: any = {
+            phoneNumber,
+            network,
+        };
+
+        // Add network-specific data
+        if (network === BlockchainNetwork.STELLAR && walletInfo.secret) {
+            userData.secret = walletInfo.secret;
+        }
 
         await Wallet.create({
             appId,
@@ -331,10 +380,11 @@ export class SmsAuthController extends Controller {
             publicKey: walletInfo.publicKey,
             encryptedPrivateKey: walletInfo.privateKey,
             encryptionSalt,
-            userData: JSON.stringify({ phoneNumber }),
+            userData: JSON.stringify(userData),
             isActive: false,
             otp: otp.toString(),
             otpExpiry,
+            network,
         });
 
         await this.sendOTPSMS(phoneNumber, otp.toString());
@@ -358,6 +408,7 @@ export class SmsAuthController extends Controller {
     }
 
     private async sendOTPSMS(phoneNumber: string, otp: string): Promise<void> {
+        // Customize OTP message based on configuration
         const smsResult = await this.smsService.sendOTP(phoneNumber, otp, 10);
 
         if (!smsResult.success) {
@@ -378,8 +429,9 @@ export class SmsAuthController extends Controller {
 
     private async sendWelcomeSMS(phoneNumber: string): Promise<void> {
         try {
-            const smsResult =
-                await this.smsService.sendWelcomeMessage(phoneNumber);
+            const smsResult = await this.smsService.sendWelcomeMessage(
+                phoneNumber,
+            );
 
             if (!smsResult.success) {
                 console.warn('Welcome SMS failed to send:', smsResult.error);
@@ -408,6 +460,7 @@ export class SmsAuthController extends Controller {
             walletAddress: wallet.address,
             socialType: wallet.socialType,
             userData: wallet.userData,
+            network: wallet.network,
         };
     }
 }

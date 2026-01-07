@@ -10,7 +10,7 @@ import {
     Security,
 } from 'tsoa';
 import { Request as ExpressRequest } from 'express';
-import crypto from 'crypto'; // Import Node.js crypto
+import crypto from 'crypto';
 import { Wallet } from '../models/wallet-models';
 import { ApiError } from '../utils/ApiError';
 import {
@@ -20,21 +20,24 @@ import {
     expireOTP,
     validateEmail,
 } from '../utils/auth';
-import walletService from '../services/wallet-service';
+import walletService, { BlockchainNetwork } from '../services/wallet-service';
 import emailService from '../config/email-config';
 
 // Request interfaces
 interface EmailLoginRequest {
     email: string;
+    network?: BlockchainNetwork;
 }
 
 interface VerifyOTPRequest {
     email: string;
     otp: string;
+    network?: BlockchainNetwork;
 }
 
 interface ResendOTPRequest {
     email: string;
+    network?: BlockchainNetwork;
 }
 
 // Response interfaces
@@ -43,6 +46,7 @@ interface EmailLoginResponse {
     message: string;
     isActive?: boolean;
     walletExists?: boolean;
+    network?: BlockchainNetwork;
 }
 
 interface VerifyOTPResponse {
@@ -52,6 +56,7 @@ interface VerifyOTPResponse {
         walletAddress: string;
         socialType: string;
         userData: string;
+        network: BlockchainNetwork;
     };
     isActive?: boolean;
     token?: string;
@@ -69,7 +74,7 @@ export class EmailAuthController extends Controller {
     /**
      * Login or register with email
      * Sends OTP to email for verification
-     * @example requestBody {"email": "user@example.com"}
+     * @example requestBody {"email": "user@example.com", "network": "stellar"}
      */
     @Post('login')
     @SuccessResponse('200', 'OTP sent successfully')
@@ -78,22 +83,24 @@ export class EmailAuthController extends Controller {
         message: 'OTP sent to email for verification',
         isActive: false,
         walletExists: false,
+        network: BlockchainNetwork.STELLAR,
     })
     @Security('app')
     public async emailLogin(
-        @Body() body: EmailLoginRequest, // Fixed: Should be EmailLoginRequest, not EmailLoginResponse
+        @Body() body: EmailLoginRequest,
         @Request() request: ExpressRequest,
     ): Promise<EmailLoginResponse> {
         const { app } = (request as any).user;
-        const { email } = body;
+        const { email, network = BlockchainNetwork.EVM } = body;
         const token = request.header('Authorization')?.replace('Bearer ', '');
 
         this.validateEmailInput(email);
 
         const normalizedEmail = email.toLowerCase();
-        const existingWallet = await this.findWalletByEmail(
+        const existingWallet = await this.findWalletByEmailAndNetwork(
             normalizedEmail,
             app.appId,
+            network,
         );
 
         if (
@@ -104,6 +111,7 @@ export class EmailAuthController extends Controller {
                 success: true,
                 message: 'User already logged in',
                 isActive: true,
+                network: network,
             };
         }
 
@@ -122,21 +130,29 @@ export class EmailAuthController extends Controller {
                 message: 'OTP sent to email for verification',
                 isActive: existingWallet.isActive,
                 walletExists: true,
+                network: network,
             };
         }
 
-        await this.handleNewWallet(normalizedEmail, app.appId, otp, otpExpiry);
+        await this.handleNewWallet(
+            normalizedEmail,
+            app.appId,
+            otp,
+            otpExpiry,
+            network,
+        );
         return {
             success: true,
             message: 'OTP sent to email for verification',
             isActive: false,
             walletExists: false,
+            network: network,
         };
     }
 
     /**
      * Verify OTP and activate wallet
-     * @example requestBody {"email": "user@example.com", "otp": "123456"}
+     * @example requestBody {"email": "user@example.com", "otp": "123456", "network": "stellar"}
      */
     @Post('verify')
     @SuccessResponse('200', 'Wallet verified successfully')
@@ -144,9 +160,11 @@ export class EmailAuthController extends Controller {
         success: true,
         message: 'Wallet verified successfully',
         data: {
-            walletAddress: '0x742E6B6D8B6C4e8D8e8D8e8D8e8D8e8D8e8D8e8D',
+            walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEF',
             socialType: 'email',
-            userData: '{"email":"user@example.com"}',
+            userData:
+                '{"email":"user@example.com","network":"stellar","secret":"S..."}',
+            network: BlockchainNetwork.STELLAR,
         },
         isActive: true,
         token: 'jwt-token-here',
@@ -156,12 +174,16 @@ export class EmailAuthController extends Controller {
         @Request() request: ExpressRequest,
     ): Promise<VerifyOTPResponse> {
         const { app } = (request as any).user;
-        const { email, otp } = body;
+        const { email, otp, network = BlockchainNetwork.EVM } = body;
 
         this.validateEmailInput(email);
 
         const normalizedEmail = email.toLowerCase();
-        const wallet = await this.findWalletByEmail(normalizedEmail, app.appId);
+        const wallet = await this.findWalletByEmailAndNetwork(
+            normalizedEmail,
+            app.appId,
+            network,
+        );
 
         if (!wallet) {
             throw new ApiError(404, 'WALLET_NOT_FOUND', 'Wallet not found');
@@ -185,7 +207,10 @@ export class EmailAuthController extends Controller {
         this.validateOTP(wallet, otp);
         await this.activateWallet(wallet);
 
-        const newToken = generateJWT({ address: wallet.address });
+        const newToken = generateJWT({
+            address: wallet.address,
+            network: wallet.network, // Include network in JWT
+        });
 
         return {
             success: true,
@@ -198,7 +223,7 @@ export class EmailAuthController extends Controller {
 
     /**
      * Resend OTP to email
-     * @example requestBody {"email": "user@example.com"}
+     * @example requestBody {"email": "user@example.com", "network": "stellar"}
      */
     @Post('resend-otp')
     @SuccessResponse('200', 'OTP resent successfully')
@@ -210,11 +235,15 @@ export class EmailAuthController extends Controller {
         @Body() body: ResendOTPRequest,
         @Request() request: ExpressRequest,
     ): Promise<ResendOTPResponse> {
-        const app = (request as any).developer_app;
-        const { email } = body;
+        const { app } = (request as any).user;
+        const { email, network = BlockchainNetwork.EVM } = body;
 
         const normalizedEmail = email.toLowerCase();
-        const wallet = await this.findWalletByEmail(normalizedEmail, app.appId);
+        const wallet = await this.findWalletByEmailAndNetwork(
+            normalizedEmail,
+            app.appId,
+            network,
+        );
 
         if (!wallet) {
             throw new ApiError(404, 'WALLET_NOT_FOUND', 'Wallet not found');
@@ -244,11 +273,16 @@ export class EmailAuthController extends Controller {
         }
     }
 
-    private async findWalletByEmail(email: string, appId: string) {
+    private async findWalletByEmailAndNetwork(
+        email: string,
+        appId: string,
+        network: BlockchainNetwork = BlockchainNetwork.EVM,
+    ) {
         return await Wallet.findOne({
             email,
             socialType: 'email',
             appId,
+            network,
         });
     }
 
@@ -259,7 +293,10 @@ export class EmailAuthController extends Controller {
         try {
             const decoded = verifyJWT(token);
             return (
-                wallet && wallet.address === decoded.address && wallet.isActive
+                wallet &&
+                wallet.address === decoded.address &&
+                wallet.network === decoded.network &&
+                wallet.isActive
             );
         } catch (error) {
             return false;
@@ -281,11 +318,25 @@ export class EmailAuthController extends Controller {
         appId: string,
         otp: number,
         otpExpiry: Date,
+        network: BlockchainNetwork = BlockchainNetwork.EVM,
     ): Promise<void> {
-        const walletInfo = await walletService.generateWallet();
-        const encryptionSalt = crypto.randomBytes(16).toString('hex'); // Now using Node.js crypto
+        const walletInfo = await walletService.generateWallet(network);
+        const encryptionSalt = crypto.randomBytes(16).toString('hex');
 
-        await Wallet.create({
+        // Prepare userData based on network
+        const userData: any = {
+            email,
+            network,
+        };
+
+        // Add network-specific data
+        if (network === BlockchainNetwork.STELLAR && walletInfo.secret) {
+            userData.secret = walletInfo.secret;
+            // For Stellar, we might want to store the secret more securely
+            // Consider encrypting it separately
+        }
+
+        const walletData = {
             appId,
             email,
             socialType: 'email',
@@ -293,12 +344,14 @@ export class EmailAuthController extends Controller {
             publicKey: walletInfo.publicKey,
             encryptedPrivateKey: walletInfo.privateKey,
             encryptionSalt,
-            userData: JSON.stringify({ email }),
+            userData: JSON.stringify(userData),
             isActive: false,
             otp: otp.toString(),
             otpExpiry,
-        });
+            network,
+        };
 
+        await Wallet.create(walletData);
         await this.sendOTPEmail(email, otp.toString());
     }
 
@@ -350,6 +403,7 @@ export class EmailAuthController extends Controller {
             walletAddress: wallet.address,
             socialType: wallet.socialType,
             userData: wallet.userData,
+            network: wallet.network,
         };
     }
 }

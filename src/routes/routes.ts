@@ -144,6 +144,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BlockchainNetwork": {
+        "dataType": "refEnum",
+        "enums": ["evm","stellar","solana"],
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SmsLoginResponse": {
         "dataType": "refObject",
         "properties": {
@@ -151,6 +156,7 @@ const models: TsoaRoute.Models = {
             "message": {"dataType":"string","required":true},
             "isActive": {"dataType":"boolean"},
             "walletExists": {"dataType":"boolean"},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -159,6 +165,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "phoneNumber": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -168,7 +175,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
-            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"userData":{"dataType":"string","required":true},"socialType":{"dataType":"string","required":true},"walletAddress":{"dataType":"string","required":true}}},
+            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"network":{"ref":"BlockchainNetwork","required":true},"userData":{"dataType":"string","required":true},"socialType":{"dataType":"string","required":true},"walletAddress":{"dataType":"string","required":true}}},
             "isActive": {"dataType":"boolean"},
             "token": {"dataType":"string"},
         },
@@ -180,6 +187,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "phoneNumber": {"dataType":"string","required":true},
             "otp": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -197,6 +205,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "phoneNumber": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -387,6 +396,7 @@ const models: TsoaRoute.Models = {
             "message": {"dataType":"string","required":true},
             "isActive": {"dataType":"boolean"},
             "walletExists": {"dataType":"boolean"},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -395,6 +405,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "email": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -404,7 +415,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
-            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"userData":{"dataType":"string","required":true},"socialType":{"dataType":"string","required":true},"walletAddress":{"dataType":"string","required":true}}},
+            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"network":{"ref":"BlockchainNetwork","required":true},"userData":{"dataType":"string","required":true},"socialType":{"dataType":"string","required":true},"walletAddress":{"dataType":"string","required":true}}},
             "isActive": {"dataType":"boolean"},
             "token": {"dataType":"string"},
         },
@@ -416,6 +427,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "email": {"dataType":"string","required":true},
             "otp": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
@@ -433,6 +445,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "email": {"dataType":"string","required":true},
+            "network": {"ref":"BlockchainNetwork"},
         },
         "additionalProperties": false,
     },
