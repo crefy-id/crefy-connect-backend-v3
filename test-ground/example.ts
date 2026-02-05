@@ -1,19 +1,61 @@
-import { createPublicClient, http } from 'viem'
-import { sepolia } from 'viem/chains'
-import { privateKeyToAccount } from 'viem/accounts'
-import { sep } from 'path'
+import StellarSdk, {Keypair} from "@stellar/stellar-sdk";
 
-export const client = createPublicClient({
-  chain: sepolia,
-  transport: http(),
-})
- 
+const privateKey = "SBBU3V25UG35OSAYC6HB4223STHW3A2QQXUSQYNOKBU5GZTVIBBLLJQ6"
 
-// Local Account
-const account = privateKeyToAccount("0x54a0a26f36ee42e8450420511174fe82f478f03257df27a179e7a4b1cd926b5d")
+const keypair = Keypair.fromSecret(privateKey)
 
-const balances = await client.getBalance({
-  address: "0x9B9d79686dbd0DE8Df5a8FcA26CcC19Ac02E5333"
-});
+console.log("Public Key: ", keypair.publicKey())
+console.log("Secret Key: ", keypair.secret())
 
-console.log(balances)
+// 2. Connect to stellar network
+const server = new StellarSdk.Horizon.Server("https://horizon-testnet.stellar.org/")
+
+async function LoadAccount() {
+    try {
+        const account = await server.loadAccount(keypair.publicKey())
+        console.log("AccountID: ", account.account_id)
+        console.log("Balances: ", account.balances)
+        console.log("Operations", account.operations)
+      
+    } catch (error) {
+        
+        console.error("Error loading account: ", error)
+    }
+}
+
+LoadAccount()
+
+async function LoadTransactions() {
+    try {
+        server.transactions()
+            .forAccount('GBHUQNRSICBJRSUKCZ2HOEPBEU23VJGPPPMYHIS6RV7MJJPBQI2SLJTI')
+            .call().then(function(r: any){ console.log(r); });
+    } catch (error) {
+        console.error("Error loading account: ", error)
+    }
+}
+// LoadTransactions()
+
+
+async function FundWithFriendbot(){
+    try {
+        console.log("Funding account with Friendbot...");
+        
+        // Using fetch API since Stellar SDK's Friendbot might not be available
+        const response = await fetch(
+            `https://friendbot.stellar.org?addr=${encodeURIComponent(keypair.publicKey())}`
+        );
+        const result = await response.json();
+        console.log("Friendbot response:", result);
+        
+        // Wait a moment for the transaction to be processed
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        return true;
+    } catch (error) {
+        console.error("Error with Friendbot:", error);
+        return false;
+    }
+}
+
+// FundWithFriendbot()

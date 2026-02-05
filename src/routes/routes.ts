@@ -1342,7 +1342,7 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsBalanceController_getBalance: Record<string, TsoaRoute.ParameterSchema> = {
-                walletAddress: {"in":"query","name":"walletAddress","required":true,"dataType":"string"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 chainId: {"in":"query","name":"chainId","dataType":"double"},
         };
         app.get('/balance/native',
@@ -1374,8 +1374,9 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsBalanceController_getBalances: Record<string, TsoaRoute.ParameterSchema> = {
-                walletAddress: {"in":"query","name":"walletAddress","required":true,"dataType":"string"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
                 chainIds: {"in":"query","name":"chainIds","dataType":"string"},
+                network: {"in":"query","name":"network","dataType":"string"},
         };
         app.get('/balance/balances',
             authenticateMiddleware([{"app":[]},{"bearer":[]}]),

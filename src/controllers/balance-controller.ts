@@ -1,24 +1,28 @@
 /// <reference path="../types/global.d.ts" />
 import {
     Controller,
-    Post,
     Get,
     Route,
     Tags,
-    Body,
     Query,
     SuccessResponse,
     Example,
     Security,
+    Request
 } from 'tsoa';
 import { ApiError } from '../utils/ApiError';
 import { BalanceService } from '../services/balance-service';
+import { StellarServices } from '../services/stellar/stella-services';
 import { getChainConfig } from '../config/chains';
+import { CustomRequest } from '../utils/request';
 import { type Address } from 'viem';
+import { Wallet } from '../models/wallet-models';
+
 import {
     BalanceResponse,
     SupportedChainsResponse,
 } from '../types/balance-types';
+
 
 // Example data for Swagger
 const exampleBalanceResponse: BalanceResponse = {
@@ -108,22 +112,14 @@ export class BalanceController extends Controller {
     @SuccessResponse('200', 'Native balance retrieved successfully')
     @Example<BalanceResponse>(exampleBalanceResponse)
     public async getBalance(
-        @Query() walletAddress: string,
+        @Request() request: CustomRequest,
         @Query() chainId?: number,
     ): Promise<BalanceResponse> {
         try {
-            // Validate wallet address format
-            if (
-                !walletAddress.startsWith('0x') ||
-                walletAddress.length !== 42
-            ) {
-                throw new ApiError(
-                    400,
-                    'INVALID_ADDRESS',
-                    'Invalid wallet address format',
-                );
+            const walletAddress = request.user?.wallet.address;
+            if (!walletAddress) {
+                throw new ApiError(400, 'MISSING_ADDRESS', 'Wallet address is required');
             }
-
             // Default to Base mainnet if chainId not provided
             const targetChainId = chainId || 8453;
             
@@ -210,8 +206,9 @@ export class BalanceController extends Controller {
         ],
     })
     public async getBalances(
-        @Query() walletAddress: string,
+        @Request() req: CustomRequest,
         @Query() chainIds?: string,
+        @Query() network?: string,
     ): Promise<{
         success: boolean;
         walletAddress: string;
@@ -224,19 +221,27 @@ export class BalanceController extends Controller {
             chainName: string;
         }>;
     }> {
-        try {
-            // Validate wallet address format
-            if (
-                !walletAddress.startsWith('0x') ||
-                walletAddress.length !== 42
-            ) {
-                throw new ApiError(
-                    400,
-                    'INVALID_ADDRESS',
-                    'Invalid wallet address format',
-                );
-            }
+        const walletAddress = req.user.wallet.address;
+        const wallet  = await Wallet.findOne({address: walletAddress});
+        const secretKey = wallet?.encryptedPrivateKey;
 
+        if (!walletAddress) {
+            throw new ApiError(400, 'MISSING_WALLET_ADDRESS', 'Wallet address is required');
+        }
+
+        if (network === "stellar" && !secretKey) {
+            throw new ApiError(400, 'MISSING_SECRET_KEY', 'Secret key is required for stellar');
+        }
+
+        try {
+            if (network && network === "stellar") {
+                const stellarService = new StellarServices(secretKey as string)
+                return {
+                    success: true,
+                    walletAddress,
+                    balances: await stellarService.GetBalance()
+                }
+            } 
             // Parse chainIds from query parameter
             let targetChainIds: number[] | undefined;
             if (chainIds) {
