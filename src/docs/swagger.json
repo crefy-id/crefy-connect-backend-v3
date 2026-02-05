@@ -1006,23 +1006,56 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"NativeCurrency": {
+			"SupportedChain": {
 				"properties": {
+					"chainId": {
+						"type": "number",
+						"format": "double"
+					},
 					"name": {
 						"type": "string"
 					},
-					"symbol": {
+					"testnet": {
+						"type": "boolean"
+					},
+					"currency": {
 						"type": "string"
 					},
-					"decimals": {
-						"type": "number",
-						"format": "double"
+					"explorerUrl": {
+						"type": "string"
+					},
+					"rpcUrl": {
+						"type": "string"
+					},
+					"nativeCurrency": {
+						"properties": {
+							"decimals": {
+								"type": "number",
+								"format": "double"
+							},
+							"symbol": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"decimals",
+							"symbol",
+							"name"
+						],
+						"type": "object"
 					}
 				},
 				"required": [
+					"chainId",
 					"name",
-					"symbol",
-					"decimals"
+					"testnet",
+					"currency",
+					"explorerUrl",
+					"rpcUrl",
+					"nativeCurrency"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1034,40 +1067,7 @@
 					},
 					"chains": {
 						"items": {
-							"properties": {
-								"nativeCurrency": {
-									"$ref": "#/components/schemas/NativeCurrency"
-								},
-								"rpcUrl": {
-									"type": "string"
-								},
-								"explorerUrl": {
-									"type": "string"
-								},
-								"currency": {
-									"type": "string"
-								},
-								"testnet": {
-									"type": "boolean"
-								},
-								"name": {
-									"type": "string"
-								},
-								"chainId": {
-									"type": "number",
-									"format": "double"
-								}
-							},
-							"required": [
-								"nativeCurrency",
-								"rpcUrl",
-								"explorerUrl",
-								"currency",
-								"testnet",
-								"name",
-								"chainId"
-							],
-							"type": "object"
+							"$ref": "#/components/schemas/SupportedChain"
 						},
 						"type": "array"
 					}
@@ -1079,91 +1079,27 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"NativeBalanceResponse": {
+			"NativeBalance": {
 				"properties": {
-					"success": {
-						"type": "boolean"
-					},
 					"balance": {
 						"type": "string"
 					},
-					"error": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"success",
-					"balance"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"NativeBalanceRequest": {
-				"properties": {
-					"walletAddress": {
+					"formatted": {
 						"type": "string"
 					},
-					"chainId": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"walletAddress"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"TokenBalance": {
-				"properties": {
-					"symbol": {
-						"type": "string"
-					},
-					"balance": {
-						"type": "string"
-					},
-					"formattedBalance": {
+					"currency": {
 						"type": "string"
 					},
 					"decimals": {
 						"type": "number",
 						"format": "double"
-					},
-					"tokenAddress": {
-						"type": "string"
-					},
-					"isNative": {
-						"type": "boolean"
-					},
-					"name": {
-						"type": "string"
 					}
 				},
 				"required": [
-					"symbol",
 					"balance",
-					"formattedBalance",
-					"decimals",
-					"tokenAddress",
-					"isNative"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"TokenBalanceResponse": {
-				"properties": {
-					"success": {
-						"type": "boolean"
-					},
-					"tokenBalance": {
-						"$ref": "#/components/schemas/TokenBalance"
-					},
-					"error": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"success"
+					"formatted",
+					"currency",
+					"decimals"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1177,25 +1113,13 @@
 						"type": "string"
 					},
 					"nativeBalance": {
-						"type": "string"
-					},
-					"tokenBalances": {
-						"items": {
-							"$ref": "#/components/schemas/TokenBalance"
-						},
-						"type": "array"
-					},
-					"totalValueUSD": {
-						"type": "string"
+						"$ref": "#/components/schemas/NativeBalance"
 					},
 					"chainId": {
 						"type": "number",
 						"format": "double"
 					},
 					"chainName": {
-						"type": "string"
-					},
-					"error": {
 						"type": "string"
 					}
 				},
@@ -1203,86 +1127,8 @@
 					"success",
 					"walletAddress",
 					"nativeBalance",
-					"tokenBalances",
 					"chainId",
 					"chainName"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"BalanceRequest": {
-				"properties": {
-					"walletAddress": {
-						"type": "string"
-					},
-					"tokenAddress": {
-						"type": "string"
-					},
-					"chainId": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"walletAddress"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MultipleTokensResponse": {
-				"properties": {
-					"success": {
-						"type": "boolean"
-					},
-					"walletAddress": {
-						"type": "string"
-					},
-					"tokenBalances": {
-						"items": {
-							"$ref": "#/components/schemas/TokenBalance"
-						},
-						"type": "array"
-					},
-					"chainId": {
-						"type": "number",
-						"format": "double"
-					},
-					"chainName": {
-						"type": "string"
-					},
-					"error": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"success",
-					"walletAddress",
-					"tokenBalances",
-					"chainId",
-					"chainName"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MultipleTokensRequest": {
-				"properties": {
-					"walletAddress": {
-						"type": "string"
-					},
-					"tokenAddresses": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
-					},
-					"chainId": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"walletAddress",
-					"tokenAddresses"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -2743,6 +2589,19 @@
 														"symbol": "ETH",
 														"decimals": 18
 													}
+												},
+												{
+													"chainId": 11155111,
+													"name": "Sepolia",
+													"testnet": true,
+													"currency": "ETH",
+													"explorerUrl": "https://sepolia.etherscan.io",
+													"rpcUrl": "https://sepolia.infura.io/v3/",
+													"nativeCurrency": {
+														"name": "Sepolia ETH",
+														"symbol": "ETH",
+														"decimals": 18
+													}
 												}
 											]
 										}
@@ -2768,21 +2627,29 @@
 			}
 		},
 		"/balance/native": {
-			"post": {
-				"operationId": "GetNativeBalance",
+			"get": {
+				"operationId": "GetBalance",
 				"responses": {
 					"200": {
 						"description": "Native balance retrieved successfully",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/NativeBalanceResponse"
+									"$ref": "#/components/schemas/BalanceResponse"
 								},
 								"examples": {
 									"Example 1": {
 										"value": {
 											"success": true,
-											"balance": "0.125"
+											"walletAddress": "0xa5E0Da329eE5AA03f09228e534953496334080f5",
+											"nativeBalance": {
+												"balance": "125000000000000000",
+												"formatted": "0.125",
+												"currency": "ETH",
+												"decimals": 18
+											},
+											"chainId": 8453,
+											"chainName": "Base"
 										}
 									}
 								}
@@ -2790,63 +2657,7 @@
 						}
 					}
 				},
-				"description": "Get native balance only",
-				"tags": [
-					"Balance Service"
-				],
-				"security": [
-					{
-						"app": []
-					},
-					{
-						"bearer": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/NativeBalanceRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/balance/token": {
-			"post": {
-				"operationId": "GetTokenBalance",
-				"responses": {
-					"200": {
-						"description": "Token balance retrieved successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/TokenBalanceResponse"
-								},
-								"examples": {
-									"Example 1": {
-										"value": {
-											"success": true,
-											"tokenBalance": {
-												"symbol": "USDC",
-												"balance": "1500000000",
-												"formattedBalance": "1500.00",
-												"decimals": 6,
-												"tokenAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-												"isNative": false,
-												"name": "USD Coin"
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"description": "Get token balance for a specific ERC20 token",
+				"description": "Get native balance for a wallet address on a specific chain",
 				"tags": [
 					"Balance Service"
 				],
@@ -2869,25 +2680,18 @@
 					},
 					{
 						"in": "query",
-						"name": "tokenAddress",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
 						"name": "chainId",
 						"required": false,
 						"schema": {
-							"type": "string"
+							"format": "double",
+							"type": "number"
 						}
 					}
 				]
 			}
 		},
-		"/balance/all": {
-			"post": {
+		"/balance/balances": {
+			"get": {
 				"operationId": "GetBalances",
 				"responses": {
 					"200": {
@@ -2895,36 +2699,80 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/BalanceResponse"
+									"properties": {
+										"balances": {
+											"items": {
+												"properties": {
+													"chainName": {
+														"type": "string"
+													},
+													"decimals": {
+														"type": "number",
+														"format": "double"
+													},
+													"currency": {
+														"type": "string"
+													},
+													"chainId": {
+														"type": "number",
+														"format": "double"
+													},
+													"formatted": {
+														"type": "string"
+													},
+													"balance": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"chainName",
+													"decimals",
+													"currency",
+													"chainId",
+													"formatted",
+													"balance"
+												],
+												"type": "object"
+											},
+											"type": "array"
+										},
+										"walletAddress": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"balances",
+										"walletAddress",
+										"success"
+									],
+									"type": "object"
 								},
 								"examples": {
 									"Example 1": {
 										"value": {
 											"success": true,
 											"walletAddress": "0xa5E0Da329eE5AA03f09228e534953496334080f5",
-											"nativeBalance": "0.125",
-											"tokenBalances": [
+											"balances": [
 												{
-													"symbol": "ETH",
 													"balance": "125000000000000000",
-													"formattedBalance": "0.125",
+													"formatted": "0.125",
+													"chainId": 8453,
+													"currency": "ETH",
 													"decimals": 18,
-													"tokenAddress": "0x0000000000000000000000000000000000000000",
-													"isNative": true,
-													"name": "Ethereum"
+													"chainName": "Base"
 												},
 												{
-													"symbol": "USDC",
-													"balance": "1500000000",
-													"formattedBalance": "1500.00",
-													"decimals": 6,
-													"tokenAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-													"isNative": false,
-													"name": "USD Coin"
+													"balance": "50000000000000000",
+													"formatted": "0.05",
+													"chainId": 11155111,
+													"currency": "ETH",
+													"decimals": 18,
+													"chainName": "Sepolia"
 												}
-											],
-											"chainId": 8453,
-											"chainName": "Base"
+											]
 										}
 									}
 								}
@@ -2932,7 +2780,7 @@
 						}
 					}
 				},
-				"description": "Get all balances (native + specified token)",
+				"description": "Get native balances across multiple chains",
 				"tags": [
 					"Balance Service"
 				],
@@ -2944,87 +2792,24 @@
 						"bearer": []
 					}
 				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/BalanceRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/balance/multiple-tokens": {
-			"post": {
-				"operationId": "GetMultipleTokenBalances",
-				"responses": {
-					"200": {
-						"description": "Multiple token balances retrieved successfully",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MultipleTokensResponse"
-								},
-								"examples": {
-									"Example 1": {
-										"value": {
-											"success": true,
-											"walletAddress": "0xa5E0Da329eE5AA03f09228e534953496334080f5",
-											"tokenBalances": [
-												{
-													"symbol": "USDC",
-													"balance": "1500000000",
-													"formattedBalance": "1500.00",
-													"decimals": 6,
-													"tokenAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-													"isNative": false,
-													"name": "USD Coin"
-												},
-												{
-													"symbol": "DAI",
-													"balance": "250000000000000000000",
-													"formattedBalance": "250.00",
-													"decimals": 18,
-													"tokenAddress": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
-													"isNative": false,
-													"name": "Dai Stablecoin"
-												}
-											],
-											"chainId": 8453,
-											"chainName": "Base"
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"description": "Get multiple token balances at once",
-				"tags": [
-					"Balance Service"
-				],
-				"security": [
+				"parameters": [
 					{
-						"app": []
+						"in": "query",
+						"name": "walletAddress",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
 					},
 					{
-						"bearer": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/MultipleTokensRequest"
-							}
+						"in": "query",
+						"name": "chainIds",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					}
-				}
+				]
 			}
 		},
 		"/auth/wallet-info": {

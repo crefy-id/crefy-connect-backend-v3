@@ -1,85 +1,45 @@
-export interface NativeCurrency {
-    name: string;
-    symbol: string;
-    decimals: number;
-}
-
-// Use string instead of 0x${string} for DTO interfaces to avoid TSOA errors
-export interface BalanceRequest {
-    walletAddress: string;
-    tokenAddress?: string | undefined;
-    chainId?: number | undefined;
-}
-
-export interface TokenBalance {
-    symbol: string;
+// balance-types.ts - Simplified version
+export interface NativeBalance {
     balance: string;
-    formattedBalance: string;
+    formatted: string;
+    currency: string;
     decimals: number;
-    tokenAddress: string;
-    isNative: boolean;
-    name?: string | undefined;
 }
 
 export interface BalanceResponse {
     success: boolean;
     walletAddress: string;
-    nativeBalance: string;
-    tokenBalances: TokenBalance[];
-    totalValueUSD?: string | undefined;
+    nativeBalance: NativeBalance;
     chainId: number;
     chainName: string;
-    error?: string | undefined;
 }
 
-export interface TokenInfo {
-    address: string;
-    symbol: string;
-    decimals: number;
+export interface SupportedChain {
+    chainId: number;
     name: string;
-}
-
-export interface NativeBalanceRequest {
-    walletAddress: string;
-    chainId?: number | undefined;
-}
-
-export interface NativeBalanceResponse {
-    success: boolean;
-    balance: string;
-    error?: string | undefined;
-}
-
-export interface TokenBalanceResponse {
-    success: boolean;
-    tokenBalance?: TokenBalance | undefined;
-    error?: string | undefined;
-}
-
-export interface MultipleTokensRequest {
-    walletAddress: string;
-    tokenAddresses: string[];
-    chainId?: number | undefined;
-}
-
-export interface MultipleTokensResponse {
-    success: boolean;
-    walletAddress: string;
-    tokenBalances: TokenBalance[];
-    chainId: number;
-    chainName: string;
-    error?: string | undefined;
+    testnet: boolean;
+    currency: string;
+    explorerUrl: string;
+    rpcUrl: string;
+    nativeCurrency: {
+        name: string;
+        symbol: string;
+        decimals: number;
+    };
 }
 
 export interface SupportedChainsResponse {
     success: boolean;
-    chains: Array<{
-        chainId: number;
-        name: string;
-        testnet: boolean;
-        currency: string;
-        explorerUrl: string;
-        rpcUrl: string;
-        nativeCurrency: NativeCurrency;
-    }>;
+    chains: SupportedChain[];
+}
+
+// For query parameters
+export interface GetBalanceQueryParams {
+    walletAddress: string;
+    chainId?: number;
+}
+
+export interface GetBalancesQueryParams {
+    walletAddress: string;
+    chainIds?: string; // comma-separated list
 }
