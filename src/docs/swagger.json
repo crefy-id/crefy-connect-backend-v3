@@ -2672,14 +2672,6 @@
 				"parameters": [
 					{
 						"in": "query",
-						"name": "walletAddress",
-						"required": true,
-						"schema": {
-							"type": "string"
-						}
-					},
-					{
-						"in": "query",
 						"name": "chainId",
 						"required": false,
 						"schema": {
@@ -2795,15 +2787,15 @@
 				"parameters": [
 					{
 						"in": "query",
-						"name": "walletAddress",
-						"required": true,
+						"name": "chainIds",
+						"required": false,
 						"schema": {
 							"type": "string"
 						}
 					},
 					{
 						"in": "query",
-						"name": "chainIds",
+						"name": "network",
 						"required": false,
 						"schema": {
 							"type": "string"

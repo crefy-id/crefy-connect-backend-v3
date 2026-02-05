@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import balanceController from '../controllers/balance-controller';
 import { authenticateToken } from '../middleware/auth-middleware';
+import { CustomRequest } from '../utils/request';
 
 const router: Router = Router();
 
@@ -28,13 +29,13 @@ router.get('/chains', authenticateToken, (req, res, next) => {
  * @returns {Object} Native balance with chain info
  */
 router.get('/native', authenticateToken, (req, res, next) => {
-    const { walletAddress, chainId } = req.query;
+    const {  chainId } = req.query;
     
     // Parse chainId to number if provided
     const chainIdNumber = chainId ? parseInt(chainId as string, 10) : undefined;
     
     balanceController
-        .getBalance(walletAddress as string, chainIdNumber)
+        .getBalance(req as unknown as CustomRequest, chainIdNumber)
         .then((result) => res.json(result))
         .catch(next);
 });
@@ -49,10 +50,11 @@ router.get('/native', authenticateToken, (req, res, next) => {
  * @returns {Object} Native balances across specified chains
  */
 router.get('/balances', authenticateToken, (req, res, next) => {
-    const { walletAddress, chainIds } = req.query;
+    const { chainIds, network } = req.query;
+    // console.log("request:", req.query)
     
     balanceController
-        .getBalances(walletAddress as string, chainIds as string)
+        .getBalances(req as unknown as CustomRequest, chainIds as string, network as string)
         .then((result) => res.json(result))
         .catch(next);
 });
