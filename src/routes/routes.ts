@@ -450,12 +450,16 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "NativeCurrency": {
+    "SupportedChain": {
         "dataType": "refObject",
         "properties": {
+            "chainId": {"dataType":"double","required":true},
             "name": {"dataType":"string","required":true},
-            "symbol": {"dataType":"string","required":true},
-            "decimals": {"dataType":"double","required":true},
+            "testnet": {"dataType":"boolean","required":true},
+            "currency": {"dataType":"string","required":true},
+            "explorerUrl": {"dataType":"string","required":true},
+            "rpcUrl": {"dataType":"string","required":true},
+            "nativeCurrency": {"dataType":"nestedObjectLiteral","nestedProperties":{"decimals":{"dataType":"double","required":true},"symbol":{"dataType":"string","required":true},"name":{"dataType":"string","required":true}},"required":true},
         },
         "additionalProperties": false,
     },
@@ -464,50 +468,18 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "success": {"dataType":"boolean","required":true},
-            "chains": {"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"nativeCurrency":{"ref":"NativeCurrency","required":true},"rpcUrl":{"dataType":"string","required":true},"explorerUrl":{"dataType":"string","required":true},"currency":{"dataType":"string","required":true},"testnet":{"dataType":"boolean","required":true},"name":{"dataType":"string","required":true},"chainId":{"dataType":"double","required":true}}},"required":true},
+            "chains": {"dataType":"array","array":{"dataType":"refObject","ref":"SupportedChain"},"required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "NativeBalanceResponse": {
+    "NativeBalance": {
         "dataType": "refObject",
         "properties": {
-            "success": {"dataType":"boolean","required":true},
             "balance": {"dataType":"string","required":true},
-            "error": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "NativeBalanceRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "walletAddress": {"dataType":"string","required":true},
-            "chainId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TokenBalance": {
-        "dataType": "refObject",
-        "properties": {
-            "symbol": {"dataType":"string","required":true},
-            "balance": {"dataType":"string","required":true},
-            "formattedBalance": {"dataType":"string","required":true},
+            "formatted": {"dataType":"string","required":true},
+            "currency": {"dataType":"string","required":true},
             "decimals": {"dataType":"double","required":true},
-            "tokenAddress": {"dataType":"string","required":true},
-            "isNative": {"dataType":"boolean","required":true},
-            "name": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TokenBalanceResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "success": {"dataType":"boolean","required":true},
-            "tokenBalance": {"dataType":"union","subSchemas":[{"ref":"TokenBalance"},{"dataType":"undefined"}]},
-            "error": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
         },
         "additionalProperties": false,
     },
@@ -517,45 +489,9 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "walletAddress": {"dataType":"string","required":true},
-            "nativeBalance": {"dataType":"string","required":true},
-            "tokenBalances": {"dataType":"array","array":{"dataType":"refObject","ref":"TokenBalance"},"required":true},
-            "totalValueUSD": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
+            "nativeBalance": {"ref":"NativeBalance","required":true},
             "chainId": {"dataType":"double","required":true},
             "chainName": {"dataType":"string","required":true},
-            "error": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "BalanceRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "walletAddress": {"dataType":"string","required":true},
-            "tokenAddress": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
-            "chainId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MultipleTokensResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "success": {"dataType":"boolean","required":true},
-            "walletAddress": {"dataType":"string","required":true},
-            "tokenBalances": {"dataType":"array","array":{"dataType":"refObject","ref":"TokenBalance"},"required":true},
-            "chainId": {"dataType":"double","required":true},
-            "chainName": {"dataType":"string","required":true},
-            "error": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MultipleTokensRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "walletAddress": {"dataType":"string","required":true},
-            "tokenAddresses": {"dataType":"array","array":{"dataType":"string"},"required":true},
-            "chainId": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"undefined"}]},
         },
         "additionalProperties": false,
     },
@@ -1405,59 +1341,27 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsBalanceController_getNativeBalance: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"NativeBalanceRequest"},
-        };
-        app.post('/balance/native',
-            authenticateMiddleware([{"app":[]},{"bearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(BalanceController)),
-            ...(fetchMiddlewares<RequestHandler>(BalanceController.prototype.getNativeBalance)),
-
-            async function BalanceController_getNativeBalance(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsBalanceController_getNativeBalance, request, response });
-
-                const controller = new BalanceController();
-
-              await templateService.apiHandler({
-                methodName: 'getNativeBalance',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsBalanceController_getTokenBalance: Record<string, TsoaRoute.ParameterSchema> = {
+        const argsBalanceController_getBalance: Record<string, TsoaRoute.ParameterSchema> = {
                 walletAddress: {"in":"query","name":"walletAddress","required":true,"dataType":"string"},
-                tokenAddress: {"in":"query","name":"tokenAddress","required":true,"dataType":"string"},
-                chainId: {"in":"query","name":"chainId","dataType":"string"},
+                chainId: {"in":"query","name":"chainId","dataType":"double"},
         };
-        app.post('/balance/token',
+        app.get('/balance/native',
             authenticateMiddleware([{"app":[]},{"bearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(BalanceController)),
-            ...(fetchMiddlewares<RequestHandler>(BalanceController.prototype.getTokenBalance)),
+            ...(fetchMiddlewares<RequestHandler>(BalanceController.prototype.getBalance)),
 
-            async function BalanceController_getTokenBalance(request: ExRequest, response: ExResponse, next: any) {
+            async function BalanceController_getBalance(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsBalanceController_getTokenBalance, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsBalanceController_getBalance, request, response });
 
                 const controller = new BalanceController();
 
               await templateService.apiHandler({
-                methodName: 'getTokenBalance',
+                methodName: 'getBalance',
                 controller,
                 response,
                 next,
@@ -1470,9 +1374,10 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsBalanceController_getBalances: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"BalanceRequest"},
+                walletAddress: {"in":"query","name":"walletAddress","required":true,"dataType":"string"},
+                chainIds: {"in":"query","name":"chainIds","dataType":"string"},
         };
-        app.post('/balance/all',
+        app.get('/balance/balances',
             authenticateMiddleware([{"app":[]},{"bearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(BalanceController)),
             ...(fetchMiddlewares<RequestHandler>(BalanceController.prototype.getBalances)),
@@ -1489,37 +1394,6 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getBalances',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsBalanceController_getMultipleTokenBalances: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"MultipleTokensRequest"},
-        };
-        app.post('/balance/multiple-tokens',
-            authenticateMiddleware([{"app":[]},{"bearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(BalanceController)),
-            ...(fetchMiddlewares<RequestHandler>(BalanceController.prototype.getMultipleTokenBalances)),
-
-            async function BalanceController_getMultipleTokenBalances(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsBalanceController_getMultipleTokenBalances, request, response });
-
-                const controller = new BalanceController();
-
-              await templateService.apiHandler({
-                methodName: 'getMultipleTokenBalances',
                 controller,
                 response,
                 next,

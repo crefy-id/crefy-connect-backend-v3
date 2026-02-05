@@ -99,9 +99,18 @@ connectDB().then(() => {
         swaggerOptions: {
             persistAuthorization: true,
             displayRequestDuration: true,
-            docExpansion: 'none',
+            docExpansion: 'list',
+
             filter: true,
-            tryItOutEnabled: true,
+            tryItOutEnabled: false,
+            operationsSorter: 'alpha', 
+            tagsSorter: 'alpha',
+            defaultModelsExpandDepth: 3, // Show models expanded
+            defaultModelExpandDepth: 3, // Show model properties expanded
+            displayOperationId: false,
+            showCommonExtensions: true,
+            showExtensions: true,
+
         },
         customCss: '.swagger-ui .topbar { display: none }',
         customSiteTitle: 'Crefy Connect API Documentation',
