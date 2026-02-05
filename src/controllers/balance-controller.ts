@@ -235,13 +235,35 @@ export class BalanceController extends Controller {
 
         try {
             if (network && network === "stellar") {
-                const stellarService = new StellarServices(secretKey as string)
+                // Parse requested networks from query params
+                let requestedNetworks: string[] = [];
+                
+                if (chainIds) {
+                    // If chainIds is provided, map them to network names
+                    const chainIdArray = chainIds.split(',').map(id => id.trim());
+                    requestedNetworks = chainIdArray.map(chainId => {
+                        switch (chainId) {
+                            case '1': return 'mainnet';
+                            case '2': return 'testnet';
+                            case '3': return 'futurenet';
+                            default: throw new ApiError(400, 'INVALID_CHAIN_ID', `Invalid chain ID: ${chainId}`);
+                        }
+                    });
+                } else {
+                    // Default to both testnet and mainnet if no specific chainIds provided
+                    requestedNetworks = ['testnet', 'mainnet'];
+                }
+                
+                const stellarService = new StellarServices(secretKey as string, requestedNetworks);
+                const balances = await stellarService.getBalancesForAllNetworks();
+                
                 return {
                     success: true,
                     walletAddress,
-                    balances: await stellarService.GetBalance()
-                }
-            } 
+                    balances
+                };
+            }
+    
             // Parse chainIds from query parameter
             let targetChainIds: number[] | undefined;
             if (chainIds) {
