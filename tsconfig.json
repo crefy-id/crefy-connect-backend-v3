@@ -27,7 +27,8 @@
         "exactOptionalPropertyTypes": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "skipDefaultLibCheck": true
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist", "**/*.test.ts"]
